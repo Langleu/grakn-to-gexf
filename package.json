@@ -1,0 +1,14 @@
+{
+  "name": "grakntogexf",
+  "version": "0.0.1",
+  "description": "A grakn to gexf converter to use it with gephi",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Langleu",
+  "license": "MIT",
+  "dependencies": {
+    "grakn-client": "^1.8.0"
+  }
+}
