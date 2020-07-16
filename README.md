@@ -5,3 +5,5 @@ possible improvements:
 - [ ] read directly from a schema.gql
 - [ ] provide configuration through extra files
 - [ ] make an actual modul out of it
+
+![docker](docker.svg)
