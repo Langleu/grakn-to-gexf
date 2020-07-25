@@ -1,0 +1,114 @@
+define
+
+  own sub relation,
+    key rid,
+    relates owner,
+    relates ownee;
+  
+  contain sub relation,
+    key rid,
+    relates container,
+    relates containment;
+
+  include sub relation,
+    key rid,
+    relates inclusion,
+    relates included;
+  
+  depend sub relation,
+    key rid,
+    relates dependant,
+    relates dependency;
+
+  user sub entity,
+    plays owner,
+    key rid,
+    has name,
+    has created,
+    has updated,
+    has platform,
+    has schemaVersion;
+
+  repository sub entity,
+    plays ownee,
+    plays container,
+    key rid,
+    has name,
+    has fork,
+    has created,
+    has updated,
+    has description,
+    has schemaVersion;
+
+  deployment sub entity,
+    plays containment,
+    plays inclusion,
+    key rid,
+    has rtype,
+    has rawUrl,
+    has name,
+    has executable,
+    has created,
+    has updated,
+    has version,
+    has score,
+    has schemaVersion;
+
+  service sub entity,
+    plays included,
+    plays dependant,
+    plays dependency,
+    key rid,
+    has name,
+    has rtype,
+    has version,
+    has created,
+    has updated,
+    has image,
+    has metadata,
+    has schemaVersion;
+
+  rid sub attribute,
+    value string;
+
+  name sub attribute,
+    value string;
+
+  platform sub attribute,
+    value string;
+
+  fork sub attribute,
+    value boolean;
+
+  description sub attribute,
+    value string;
+  
+  rtype sub attribute,
+    value string;
+
+  rawUrl sub attribute,
+    value string;
+
+  executable sub attribute,
+    value long;
+
+  score sub attribute,
+    value long;
+
+  version sub attribute,
+    value string;
+
+  created sub attribute,
+    value datetime;
+
+  updated sub attribute,
+    value datetime;
+
+  metadata sub attribute,
+    value string;
+
+  image sub attribute,
+    value string;
+
+  schemaVersion sub attribute,
+    value long;
