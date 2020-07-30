@@ -1,9 +1,29 @@
-# GraknToGexf - WIP
-currently converts my db schema from grakn to gexf to be able to open it in gephi and have a better look at the graph.
+# grakn-to-gexf
+> reads a grakn schema and converts it into a gexf file, compatible for gephi
 
-possible improvements:
-- [ ] read directly from a schema.gql
-- [ ] provide configuration through extra files
-- [ ] make an actual modul out of it
+## Requirements
+`Node.JS >= 10`
+
+## Installation
+`git clone https://github.com/Langleu/grakn-to-gexf.git`
+
+`cd grakn-to-gexf`
+
+`npm i`
+
+## Usage
+`node index.js`
+
+following parameters are available:
+```
+--output graph (path, output will automatically be .gexf)
+--author grakn
+--keyspace grakn
+--schema schema.gql (path)
+--host localhost
+--port 48555
+--username undefined (optional)
+--password undefined (optional)
+```
 
 ![docker](docker.svg)
