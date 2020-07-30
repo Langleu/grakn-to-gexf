@@ -1,53 +1,37 @@
-const grakn = require('grakn-client');
 const fs = require('fs');
 const util = require('./util');
 
-const fileName = 'docker';
-const keyspace = 'docker';
-const author = 'Langleu';
+// args options
+const args = process.argv.slice(2);
+
+// default options
+const options = {
+  'output': 'graph',
+  'author': 'grakn',
+  'keyspace': 'grakn',
+  'schema': 'schema.gql',
+  'host': 'localhost',
+  'port': '48555',
+  'username': undefined,
+  'password': undefined
+}
+
+createOptions = () => {
+  let rgx = /(^--)/;
+
+  for (let i = 0; i < args.length; i++) {
+    if (args[i].match(rgx)) {
+      options[args[i].slice(2)] = args[i + 1] || "<no-value>";
+    }
+  }
+};
 
 const entities = {};
 const relations = {};
 
-async function runBasicQueries (arr, query, type) {
-	const client = new grakn("localhost:48555");
-  const session = await client.session(keyspace);
-  
-  const readTransaction = await session.transaction().read();
-
-  if (type == 'ENTITY')
-    entities[arr] = [];
-  else
-    relations[arr] = [];
-
-	let answerIterator = await readTransaction.query(query);
-	let aConceptMapAnswer = await answerIterator.next();
-	while (aConceptMapAnswer != null) {
-    let ob = {};
-
-    aConceptMapAnswer.map().forEach(e => {
-      if (e.baseType == 'ENTITY')
-        ob[e._type._label] = e.id;
-      else
-        ob[e._type._label] = e._value;
-    });
-
-    ob.id = aConceptMapAnswer.map().get('id').id;
-    if (type == 'ENTITY')
-      entities[arr].push(ob);
-    else
-      relations[arr].push(ob);
-		aConceptMapAnswer = await answerIterator.next();
-  }
-  
-	await readTransaction.close();
-	await session.close();
-	client.close();
-}
-
 const callFunc = async (obj) => {
   for await (const entry of obj.all) {
-    await runBasicQueries(entry.name, entry.query, entry.type.toUpperCase());
+    await util.runBasicQueries(entry.name, entry.query, entry.type.toUpperCase(), options, entities, relations);
   }
 
   let id = 0; // counter for attributes
@@ -55,29 +39,42 @@ const callFunc = async (obj) => {
     edge: [],
     node: []
   };
-  const wstream = fs.createWriteStream(`${fileName}.gexf`);
+  
+  const wstream = fs.createWriteStream(`${options.output}.gexf`);
   // metadata
   wstream.write('<?xml version="1.0" encoding="UTF-8"?>');
   wstream.write('<gexf xmlns="http://www.gexf.net/1.2draft" version="1.2">');
   wstream.write('<meta lastmodifieddate="2009-03-20">');
-  wstream.write(`<creator>${author}</creator>`);
-  wstream.write(`<description>${fileName} graph</description>`);
+  wstream.write(`<creator>${options.author}</creator>`);
+  wstream.write(`<description>${options.output} graph</description>`);
   wstream.write('</meta>');
   wstream.write('<graph mode="static" defaultedgetype="directed">');
   wstream.write('<attributes class="edge" mode="static">');
-  add.edge.push({ id, attr: '_type'});
+  add.edge.push({
+    id,
+    attr: '_type'
+  });
   wstream.write(`<attribute id="${id++}" title="_type" type="string" />`);
   obj.combined.edge.forEach(e => {
-    add.edge.push({ id, attr: e});
+    add.edge.push({
+      id,
+      attr: e
+    });
     wstream.write(`<attribute id="${id++}" title="${e}" type="string" />`);
   });
   wstream.write('<attribute id="3" title="relation" type="string" />');
   wstream.write('</attributes>');
   wstream.write('<attributes class="node" mode="static">');
-  add.node.push({ id, attr: '_type'});
+  add.node.push({
+    id,
+    attr: '_type'
+  });
   wstream.write(`<attribute id="${id++}" title="_type" type="string" />`);
   obj.combined.node.forEach(e => {
-    add.node.push({ id, attr: e});
+    add.node.push({
+      id,
+      attr: e
+    });
     wstream.write(`<attribute id="${id++}" title="${e}" type="string" />`);
   });
   wstream.write('</attributes>');
@@ -91,8 +88,12 @@ const callFunc = async (obj) => {
       add.node.forEach(f => {
         if (f.attr == '_type')
           wstream.write(`<attvalue for="${f.id}" value="${entity}" />`);
-        else 
-          wstream.write(`<attvalue for="${f.id}" value="${encodeURIComponent(e[f.attr])}" />`);
+        else {
+          let attr = '';
+          if (e[f.attr])
+            attr = e[f.attr].toString().replace(/&/g, 'and');
+          wstream.write(`<attvalue for="${f.id}" value="${attr}" />`);
+        }
       });
       wstream.write(`</attvalues>`);
       wstream.write('</node>');
@@ -114,8 +115,12 @@ const callFunc = async (obj) => {
       add.edge.forEach(f => {
         if (f.attr == '_type')
           wstream.write(`<attvalue for="${f.id}" value="${entity}" />`);
-        else 
-          wstream.write(`<attvalue for="${f.id}" value="${encodeURIComponent(e[f.attr])}" />`);
+        else {
+          let attr = '';
+          if (e[f.attr])
+            attr = e[f.attr].toString().replace(/&/g, 'and');
+          wstream.write(`<attvalue for="${f.id}" value="${attr}" />`);
+        }
       });
       wstream.write(`</attvalues>`);
       wstream.write('</edge>');
@@ -128,4 +133,5 @@ const callFunc = async (obj) => {
   wstream.end();
 };
 
-callFunc(util('schema.gql'));
+createOptions();
+callFunc(util.parseSchema(options.schema));

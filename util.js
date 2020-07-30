@@ -1,5 +1,6 @@
 const fs = require('fs');
 const _ = require('lodash');
+const grakn = require('grakn-client');
 
 const getAttributes = (entry) => {
   let attributes = [];
@@ -63,7 +64,7 @@ const getQuery = (entry) => {
   return query;
 };
 
-module.exports = (path) => {
+function parseSchema(path) {
   let text = fs.readFileSync(path, 'utf8')
   text = text.replace('define', '');
   text = text.replace(/(\r\n|\n|\r)/gm, '');
@@ -98,3 +99,43 @@ module.exports = (path) => {
 
   return { all: arr, combined: { edge: _.union(...edgeAttr), node: _.union(...nodeAttr) } };
 };
+
+async function runBasicQueries(arr, query, type, options, entities, relations) {
+  let client = new grakn(`${options.host}:${options.port}`);
+  if (options.username && options.password)
+    client = new grakn(`${options.host}:${options.port}`, { 'username': options.username, 'password': options.password });
+  const session = await client.session(options.keyspace);
+
+  const readTransaction = await session.transaction().read();
+
+  if (type == 'ENTITY')
+    entities[arr] = [];
+  else
+    relations[arr] = [];
+
+  let answerIterator = await readTransaction.query(query);
+  let aConceptMapAnswer = await answerIterator.next();
+  while (aConceptMapAnswer != null) {
+    let ob = {};
+
+    aConceptMapAnswer.map().forEach(e => {
+      if (e.baseType == 'ENTITY')
+        ob[e._type._label] = e.id;
+      else
+        ob[e._type._label] = e._value;
+    });
+
+    ob.id = aConceptMapAnswer.map().get('id').id;
+    if (type == 'ENTITY')
+      entities[arr].push(ob);
+    else
+      relations[arr].push(ob);
+    aConceptMapAnswer = await answerIterator.next();
+  }
+
+  await readTransaction.close();
+  await session.close();
+  client.close();
+}
+
+module.exports = {parseSchema, runBasicQueries};
