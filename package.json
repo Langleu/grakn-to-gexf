@@ -10,6 +10,6 @@
   "license": "MIT",
   "dependencies": {
     "grakn-client": "^1.8.0",
-    "lodash": "^4.17.19"
+    "lodash": "^4.17.21"
   }
 }
